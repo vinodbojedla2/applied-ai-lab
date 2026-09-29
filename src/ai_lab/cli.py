@@ -1,0 +1,38 @@
+"""Command line entry point."""
+
+import argparse
+import json
+
+from .classification import train_and_evaluate
+from .evaluation import evaluate
+from .rag import BM25Retriever, Retriever, answer, load_documents
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Applied AI lab")
+    commands = parser.add_subparsers(dest="command", required=True)
+    ask = commands.add_parser("ask", help="Ask a question over local documents")
+    ask.add_argument("question")
+    ask.add_argument("--docs", default="data/docs")
+    ask.add_argument("--top-k", type=int, default=3)
+    ask.add_argument("--retriever", choices=["tfidf", "bm25"], default="tfidf")
+    ask.add_argument("--llm", action="store_true", help="Use OpenAI for grounded generation")
+    assessment = commands.add_parser("evaluate", help="Evaluate retrieval")
+    assessment.add_argument("--docs", default="data/docs")
+    assessment.add_argument("--questions", default="data/eval/questions.json")
+    assessment.add_argument("--top-k", type=int, default=3)
+    assessment.add_argument("--retriever", choices=["tfidf", "bm25"], default="tfidf")
+    classifier = commands.add_parser("classify", help="Train and evaluate text classifier")
+    classifier.add_argument("--data", default="data/classification/tickets.csv")
+    args = parser.parse_args()
+    if args.command == "classify":
+        result = train_and_evaluate(args.data)
+    else:
+        retriever_class = BM25Retriever if args.retriever == "bm25" else Retriever
+        retriever = retriever_class(load_documents(args.docs))
+        result = answer(args.question, retriever, args.top_k, args.llm) if args.command == "ask" else evaluate(retriever, args.questions, args.top_k)
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    main()
