@@ -1,0 +1,17 @@
+text,label
+Invoice amount is incorrect,billing
+Please send a copy of my receipt,billing
+The charge appeared twice,billing
+How do I update my payment card,billing
+My refund has not arrived,billing
+I need to change my billing address,billing
+The discount was not applied to the invoice,billing
+When will the subscription renew,billing
+The application crashes at startup,technical
+The API returns an error code,technical
+I cannot log into the dashboard,technical
+The search page is loading slowly,technical
+My export fails with a timeout,technical
+The mobile app freezes on launch,technical
+The webhook request is failing,technical
+The upload endpoint rejects my file,technical
