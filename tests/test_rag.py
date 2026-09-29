@@ -1,7 +1,7 @@
 import json
 
 from ai_lab.evaluation import evaluate
-from ai_lab.rag import BM25Retriever, Passage, Retriever, answer, chunk_text
+from ai_lab.rag import BM25Retriever, HybridRetriever, Passage, Retriever, answer, chunk_text
 
 
 def test_chunk_overlap():
@@ -53,4 +53,13 @@ def test_bm25_ranks_relevant_passage_and_handles_no_match():
         Passage("deploy.md", 1, "Deployment rollback uses canary metrics"),
     ])
     assert retriever.search("BM25 frequency")[0].passage.source == "search.md"
+    assert retriever.search("unmatchedxyz") == []
+
+
+def test_hybrid_fuses_rankings_without_unmatched_passages():
+    retriever = HybridRetriever([
+        Passage("rag.md", 1, "retrieval uses relevant document passages"),
+        Passage("ops.md", 1, "deployments need rollback metrics"),
+    ])
+    assert retriever.search("relevant retrieval")[0].passage.source == "rag.md"
     assert retriever.search("unmatchedxyz") == []
