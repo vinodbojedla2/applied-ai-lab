@@ -111,6 +111,27 @@ class BM25Retriever:
         return [Hit(self.passages[i], scores[i]) for i in ranked[:top_k] if scores[i] > 0]
 
 
+class HybridRetriever:
+    """Fuse lexical rankings with reciprocal rank fusion (RRF)."""
+
+    def __init__(self, passages: list[Passage], rrf_k: int = 60):
+        if rrf_k <= 0:
+            raise ValueError("rrf_k must be positive")
+        self.passages = passages
+        self.rrf_k = rrf_k
+        self.retrievers = (Retriever(passages), BM25Retriever(passages))
+
+    def search(self, query: str, top_k: int = 3) -> list[Hit]:
+        if not query.strip() or top_k <= 0:
+            raise ValueError("Query must be nonempty and top_k must be positive")
+        scores: dict[Passage, float] = {}
+        for retriever in self.retrievers:
+            for rank, hit in enumerate(retriever.search(query, len(self.passages)), 1):
+                scores[hit.passage] = scores.get(hit.passage, 0.0) + 1 / (self.rrf_k + rank)
+        ordered = sorted(scores, key=lambda passage: (-scores[passage], passage.source, passage.chunk))
+        return [Hit(passage, scores[passage]) for passage in ordered[:top_k]]
+
+
 def answer(query: str, retriever: Retriever, top_k: int = 3, use_llm: bool = False) -> dict:
     hits = retriever.search(query, top_k)
     citations = [{"source": h.passage.citation, "score": round(h.score, 4)} for h in hits]
