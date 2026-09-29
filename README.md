@@ -7,13 +7,14 @@ A runnable Python portfolio project with retrieval augmented generation (RAG), r
 | Area | Implementation |
 | --- | --- |
 | Document ingestion | Recursive Markdown/text loading, word-based chunks with overlap, traceable source IDs |
-| Retrieval | TF-IDF unigram/bigram cosine similarity or BM25, deterministic ranking |
+| Retrieval | TF-IDF, BM25, or hybrid reciprocal rank fusion, deterministic ranking |
+| Index | Incremental SQLite document catalog with removed-file cleanup |
 | Answers | Cited extractive baseline; optional LLM generation with source-only instructions and citation validation |
 | Evaluation | Labeled queries, hit@k, MRR@k, precision@k, recall@k and per-query results at document level |
 | ML | TF-IDF + logistic regression ticket classifier with stratified holdout evaluation |
 | Service | Optional FastAPI `/ask` and `/health` endpoints; GitHub Actions tests |
 
-The sample corpus and ticket data are intentionally tiny and synthetic. Scores on them are a smoke check, **not** evidence of production accuracy. The default answer is an excerpt from the best matching passage, not a synthesized answer. This baseline uses lexical retrieval; a next experiment is to compare embeddings and hybrid search against the same labeled question set.
+The sample corpus and ticket data are intentionally tiny and synthetic. Scores on them are a smoke check, **not** evidence of production accuracy. The default answer is an excerpt from the best matching passage, not a synthesized answer. All included retrievers are lexical; hybrid combines TF-IDF and BM25 rankings. An embedding retriever is a separate future experiment.
 
 ## Quick start
 
@@ -24,11 +25,13 @@ python -m pip install -e '.[dev]'
 ai-lab ask "How do I evaluate retrieval?"
 ai-lab evaluate
 ai-lab evaluate --retriever bm25
+ai-lab ingest --docs data/docs --index data/index.sqlite
+ai-lab ask "How do I evaluate retrieval?" --index data/index.sqlite --retriever hybrid
 ai-lab classify
 pytest -q
 ```
 
-To use your own documents, put `.md` or `.txt` files in a folder and pass `--docs path/to/folder`. The CLI loads files on each invocation; this favors a simple, reproducible demo over a persistent index.
+To use your own documents, put `.md` or `.txt` files in a folder and pass `--docs path/to/folder`. By default, the CLI loads files on each invocation. For a reusable document catalog, run `ingest` after document changes and pass `--index` to `ask` or `evaluate`. The catalog persists passages and file hashes; retrieval models are built in memory for each CLI invocation.
 
 ```bash
 ai-lab ask "What changed in the deployment?" --docs path/to/documents --top-k 3
