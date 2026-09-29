@@ -1,0 +1,5 @@
+[
+  {"question": "What does RAG do with retrieved passages?", "relevant_sources": ["rag.md"]},
+  {"question": "What does mean reciprocal rank measure?", "relevant_sources": ["evaluation.md"]},
+  {"question": "How should an AI service handle prompt injection in retrieved documents?", "relevant_sources": ["operations.md"]}
+]
